@@ -1,0 +1,6 @@
+environment = "prod"
+primary_region = "us-west-1"
+secondary_region = "ap-south-1"
+domain_name = "developingcode.in"
+app_container_image = "yourrepo/app:prod"
+aws_profile = "default"

@@ -1,0 +1,56 @@
+name: CI/CD - Terraform + App
+
+on:
+  push:
+    branches:
+      - dev
+      - stage
+      - main
+  pull_request:
+    branches:
+      - dev
+      - stage
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init
+        run: |
+          cd infra/terraform
+          terraform init
+
+      - name: Terraform Plan
+        run: |
+          cd infra/terraform
+          terraform plan -var-file=envs/${{ github.ref == 'refs/heads/main' && 'prod' || (github.ref == 'refs/heads/stage' && 'stage' || 'dev') }}.tfvars
+
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: terraform
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        run: |
+          docker build -t ghcr.io/${{ github.repository }}/app:${{ github.sha }} -t ghcr.io/${{ github.repository }}/app:latest ./app
+          docker push ghcr.io/${{ github.repository }}/app:${{ github.sha }}
+          docker push ghcr.io/${{ github.repository }}/app:latest

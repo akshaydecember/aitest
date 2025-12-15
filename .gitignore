@@ -1,0 +1,11 @@
+node_modules/
+.terraform/
+*.tfstate
+*.tfstate.backup
+.venv/
+dist/
+build/
+.env
+/.vscode/
+_notes/
+*.log
